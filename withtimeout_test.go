@@ -23,11 +23,15 @@ func TestSuccess(t *testing.T) {
 }
 
 func TestTimeout(t *testing.T) {
-	text, timedOut, err := Do(10*time.Millisecond, func() (interface{}, error) {
+	calledBack := false
+	text, timedOut, err := DoOr(10*time.Millisecond, func() (interface{}, error) {
 		time.Sleep(11 * time.Millisecond)
 		return expectedText, expectedErr
+	}, func() {
+		calledBack = true
 	})
 	assert.True(t, timedOut, "Should have timed out")
+	assert.True(t, calledBack, "Should have called back after timing out")
 	assert.NotNil(t, err, "There should be an error")
 	assert.Nil(t, text, "Text should be nil")
 	assert.Equal(t, timeoutErrorString, err.Error(), "Error should contain correct string")

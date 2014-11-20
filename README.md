@@ -10,4 +10,3 @@ To install:
 For docs:
 
 `godoc github.com/getlantern/withtimeout`
-

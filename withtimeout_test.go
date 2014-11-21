@@ -11,6 +11,7 @@ import (
 var (
 	expectedText = "My Text"
 	expectedErr  = fmt.Errorf("My Error")
+	onTimeoutErr = fmt.Errorf("OnTimeout")
 )
 
 func TestSuccess(t *testing.T) {
@@ -22,16 +23,28 @@ func TestSuccess(t *testing.T) {
 	assert.Equal(t, expectedErr, err, "Error should match expected")
 }
 
-func TestTimeout(t *testing.T) {
+func TestTimeoutWithOnTimeout(t *testing.T) {
 	calledBack := false
 	text, timedOut, err := DoOr(10*time.Millisecond, func() (interface{}, error) {
 		time.Sleep(11 * time.Millisecond)
 		return expectedText, expectedErr
-	}, func() {
+	}, func() error {
 		calledBack = true
+		return onTimeoutErr
 	})
 	assert.True(t, timedOut, "Should have timed out")
 	assert.True(t, calledBack, "Should have called back after timing out")
+	assert.NotNil(t, err, "There should be an error")
+	assert.Nil(t, text, "Text should be nil")
+	assert.Equal(t, onTimeoutErr, err, "Error should contain correct string")
+}
+
+func TestTimeoutWithoutOnTimeout(t *testing.T) {
+	text, timedOut, err := Do(10*time.Millisecond, func() (interface{}, error) {
+		time.Sleep(11 * time.Millisecond)
+		return expectedText, expectedErr
+	})
+	assert.True(t, timedOut, "Should have timed out")
 	assert.NotNil(t, err, "There should be an error")
 	assert.Nil(t, text, "Text should be nil")
 	assert.Equal(t, timeoutErrorString, err.Error(), "Error should contain correct string")

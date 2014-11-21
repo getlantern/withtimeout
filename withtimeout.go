@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	timeoutErrorString = "igdman: Operation timed out"
+	timeoutErrorString = "Operation timed out"
 )
 
 type timeoutError struct{}
@@ -24,14 +24,11 @@ func Do(timeout time.Duration, fn func() (interface{}, error)) (result interface
 // DoOr is like Do but also executes the given onTimeout function if and when fn
 // times out.
 func DoOr(timeout time.Duration, fn func() (interface{}, error), onTimeout func()) (result interface{}, timedOut bool, err error) {
-	resultCh := make(chan *resultWithError)
+	resultCh := make(chan *resultWithError, 1)
 
 	go func() {
 		result, err := fn()
-		select {
-		case resultCh <- &resultWithError{result, err}:
-			// result submitted
-		}
+		resultCh <- &resultWithError{result, err}
 	}()
 
 	select {

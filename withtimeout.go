@@ -18,12 +18,6 @@ func (timeoutError) Error() string { return timeoutErrorString }
 // error if fn did not complete within timeout. If execution timed out, timedOut
 // will be true.
 func Do(timeout time.Duration, fn func() (interface{}, error)) (result interface{}, timedOut bool, err error) {
-	return DoOr(timeout, fn, nil)
-}
-
-// DoOr is like Do but also executes the given onTimeout function if and when fn
-// times out.
-func DoOr(timeout time.Duration, fn func() (interface{}, error), onTimeout func() error) (result interface{}, timedOut bool, err error) {
 	resultCh := make(chan *resultWithError, 1)
 
 	go func() {
@@ -33,11 +27,7 @@ func DoOr(timeout time.Duration, fn func() (interface{}, error), onTimeout func(
 
 	select {
 	case <-time.After(timeout):
-		var err error = timeoutError{}
-		if onTimeout != nil {
-			err = onTimeout()
-		}
-		return nil, true, err
+		return nil, true, timeoutError{}
 	case rwe := <-resultCh:
 		return rwe.result, false, rwe.err
 	}
